@@ -16,11 +16,21 @@
         }
         h1 {
             color: #4a90e2;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #bbb;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         input {
-            width: 100%;
+            flex: 1;
             padding: 12px 20px;
-            margin: 20px 0;
             box-sizing: border-box;
             border: 2px solid #4a90e2;
             border-radius: 8px;
@@ -32,8 +42,26 @@
             outline: none;
             box-shadow: 0 0 8px #4a90e2;
         }
+        button {
+            padding: 12px 20px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
         #result-container {
-            margin-top: 20px;
+            margin-top: 10px;
         }
         .block-item {
             background-color: #2a2a35;
@@ -44,18 +72,22 @@
             justify-content: space-between;
             align-items: center;
             border-left: 5px solid #4a90e2;
-            animation: fadeIn 0.3s ease-in-out;
+            animation: fadeIn 0.2s ease-in-out;
         }
         .block-name {
             font-weight: bold;
+            text-align: left;
+            padding-right: 10px;
         }
         .block-weight {
             color: #2ecc71;
             font-weight: bold;
+            white-space: nowrap;
         }
         .no-match {
             color: #e74c3c;
             font-style: italic;
+            margin-top: 20px;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
@@ -66,14 +98,17 @@
 <body>
 
     <h1>Block Weight Finder</h1>
-    <p>Type a block name below to get its weight instantly.</p>
+    <div class="subtitle">Search or view all blocks ordered from lightest to heaviest</div>
     
-    <input type="text" id="search-bar" placeholder="Start typing block name (e.g., Titanium, Thruster)..." oninput="filterBlocks()">
+    <div class="controls">
+        <input type="text" id="search-bar" placeholder="Type to search blocks..." oninput="filterBlocks()">
+        <button id="toggle-btn" onclick="toggleAllBlocks()">Show All Blocks</button>
+    </div>
 
     <div id="result-container"></div>
 
     <script>
-        // Your complete dataset compiled into JavaScript
+        // Data explicitly sorted from lightest (0 kg) to heaviest (6544.985 kg)
         const blockData = [
             { name: "Plastic block", weight: "0 kg" },
             { name: "Jetpack", weight: "0 kg" },
@@ -146,7 +181,6 @@
             { name: "Door", weight: "24.588 kg" },
             { name: "Fabbi_theDuck plushie", weight: "25.647 ± 0.07 kg" },
             { name: "Mystery block", weight: "26.337 kg" },
-            { name: "Rule 1 block", weight: "27.048 kg" },
             { name: "Cannon", weight: "27.048 kg" },
             { name: "Mini gun", weight: "27.058 ± 0.14 kg" },
             { name: "Helm", weight: "29.098 ± 0.1 kg" },
@@ -193,25 +227,18 @@
             { name: "Soccer ball", weight: "6544.985 kg" }
         ];
 
-        function filterBlocks() {
-            const query = document.getElementById('search-bar').value.toLowerCase().trim();
+        let showingAll = false;
+
+        function displayBlocks(list) {
             const container = document.getElementById('result-container');
-            container.innerHTML = ''; // Clear old results
+            container.innerHTML = ''; 
 
-            if (query === '') {
-                return; // Keep empty if they haven't typed anything
-            }
-
-            // Filter items that include what the user typed
-            const matches = blockData.filter(block => block.name.toLowerCase().includes(query));
-
-            if (matches.length === 0) {
+            if (list.length === 0) {
                 container.innerHTML = '<div class="no-match">No blocks found matching that name.</div>';
                 return;
             }
 
-            // Display matching items
-            matches.forEach(block => {
+            list.forEach(block => {
                 const item = document.createElement('div');
                 item.className = 'block-item';
                 item.innerHTML = `
@@ -220,6 +247,46 @@
                 `;
                 container.appendChild(item);
             });
+        }
+
+        function filterBlocks() {
+            const query = document.getElementById('search-bar').value.toLowerCase().trim();
+            const button = document.getElementById('toggle-btn');
+
+            if (query === '') {
+                // If the search bar is cleared, revert to whatever the button state implies
+                if (showingAll) {
+                    displayBlocks(blockData);
+                } else {
+                    document.getElementById('result-container').innerHTML = '';
+                }
+                return;
+            }
+
+            // Filter the master sorted list based on the search input
+            const matches = blockData.filter(block => block.name.toLowerCase().includes(query));
+            displayBlocks(matches);
+        }
+
+        function toggleAllBlocks() {
+            const button = document.getElementById('toggle-btn');
+            const searchBar = document.getElementById('search-bar');
+
+            if (!showingAll) {
+                // Turn on "Show All"
+                showingAll = true;
+                button.innerText = "Clear List";
+                button.style.backgroundColor = #e74c3c; // Red clear color
+                searchBar.value = ''; // Clear search bar to show everything
+                displayBlocks(blockData);
+            } else {
+                // Turn off "Show All"
+                showingAll = false;
+                button.innerText = "Show All Blocks";
+                button.style.backgroundColor = #4a90e2; // Reset to blue
+                searchBar.value = '';
+                document.getElementById('result-container').innerHTML = '';
+            }
         }
     </script>
 </body>
