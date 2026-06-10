@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build A Boat Block Weight Finder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e24;
+            color: #fff;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #4a90e2;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #bbb;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            border: 2px solid #4a90e2;
+            border-radius: 8px;
+            background-color: #2a2a35;
+            color: white;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 8px #4a90e2;
+        }
+        button {
+            padding: 12px 20px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        button:hover {
+            background-color: #357abd;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #result-container {
+            margin-top: 10px;
+        }
+        .block-item {
+            background-color: #2a2a35;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #4a90e2;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+        .block-name {
+            font-weight: bold;
+            text-align: left;
+            padding-right: 10px;
+        }
+        .block-weight {
+            color: #2ecc71;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .no-match {
+            color: #e74c3c;
+            font-style: italic;
+            margin-top: 20px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Block Weight Finder</h1>
+    <div class="subtitle">Search or view all blocks ordered from lightest to heaviest</div>
+    
+    <div class="controls">
+        <input type="text" id="search-bar" placeholder="Type to search blocks..." oninput="filterBlocks()">
+        <button id="toggle-btn" onclick="toggleAllBlocks()">Show All Blocks</button>
+    </div>
+
+    <div id="result-container"></div>
+
+    <script>
+        const blockData = [
+            { name: "Plastic block", weight: "0 kg" },
+            { name: "Jetpack", weight: "0 kg" },
+            { name: "Star jetpack", weight: "0 kg" },
+            { name: "Easter jetpack", weight: "0 kg" },
+            { name: "Wing jetpack", weight: "0 kg" },
+            { name: "Snowball launcher", weight: "0 kg" },
+            { name: "Egg launcher", weight: "0 kg" },
+            { name: "Piston", weight: "0.01875 ± 0.0005 kg" },
+            { name: "Bouncy block", weight: "0.08 kg" },
+            { name: "Steampunk jetpack", weight: "0.342 kg" },
+            { name: "Blue / Orange / Purple / Pink / Red candy", weight: "0.64 kg" },
+            { name: "Starballoon / Balloon / Parachute block", weight: "0.7 kg" },
+            { name: "Light bulb", weight: "0.836 ± 0.002 kg" },
+            { name: "Corner wedge", weight: "0.933 kg" },
+            { name: "Music note", weight: "0.952 ± 0.002 kg" },
+            { name: "Wood rod", weight: "1.05 kg" },
+            { name: "Wedge", weight: "1.4 kg" },
+            { name: "Delay", weight: "1.53 ± 0.015 kg" },
+            { name: "Big cannon", weight: "1.75 ± 0.05 kg" },
+            { name: "Candy rod", weight: "2.1 kg" },
+            { name: "Dome camera", weight: "2.77 ± 0.015 kg" },
+            { name: "Step / Wood / Smooth wood block", weight: "2.8 kg" },
+            { name: "Old pumpkin", weight: "2.8 kg" },
+            { name: "Cake", weight: "2.951 kg" },
+            { name: "Camera", weight: "3.814 ± 0.017 kg" },
+            { name: "Wooden seat", weight: "4.558 kg" },
+            { name: "Mounted wizard staff", weight: "5.2 ± 0.03 kg" },
+            { name: "Mounted bow", weight: "5.241 ± 0.02 kg" },
+            { name: "Sign", weight: "5.3 ± 0.03 kg" },
+            { name: "Truss", weight: "5.6 kg" },
+            { name: "Suspension / Rope / Bar", weight: "5.6 kg (splits in half for sides)" },
+            { name: "Candy / Fabric / Toy / Neon block", weight: "5.6 kg" },
+            { name: "Worthy0ne plushie", weight: "6.04 ± 0.04 kg" },
+            { name: "TicTacToe", weight: "6.59 ± 0.03 kg" },
+            { name: "Mounted sword", weight: "6.77 ± 0.03 kg" },
+            { name: "Mounted candy cane sword", weight: "6.9 ± 0.03 kg" },
+            { name: "Grass block", weight: "7.2 kg" },
+            { name: "Ice block", weight: "7.352 kg" },
+            { name: "Firework 1/3 (yellow/striped one)", weight: "7.413 ± 0.026 kg" },
+            { name: "Concrete rod", weight: "7.689 kg" },
+            { name: "Stone rod", weight: "8.073 kg" },
+            { name: "Marble rod", weight: "8.073 kg" },
+            { name: "Firework 2 (blue one)", weight: "8.337 ± 0.028 kg" },
+            { name: "Glue", weight: "8.467 kg" },
+            { name: "Car seat", weight: "8.496 ± 0.042 kg" },
+            { name: "Chillthrill plushie", weight: "8.62 ± 0.043 kg" },
+            { name: "Pilot seat", weight: "8.625 ± 0.043 kg" },
+            { name: "Hinge", weight: "8.67 ± 0.046 kg" },
+            { name: "Metal chair", weight: "8.911 ± 0.04 kg" },
+            { name: "Mounted knight sword", weight: "9.94 ± 0.04 kg" },
+            { name: "Firework 4 (red with tails)", weight: "10.07 ± 0.033 kg" },
+            { name: "Zeg plushie", weight: "10.622 ± 0.06 kg" },
+            { name: "Heart", weight: "12.6 kg" },
+            { name: "Sand", weight: "12.8 kg" },
+            { name: "Button", weight: "13.815 ± 0.042 kg" },
+            { name: "Classic firework", weight: "14.062 kg" },
+            { name: "Hatch", weight: "14.785 kg" },
+            { name: "Brick block", weight: "15.376 kg" },
+            { name: "OG Yellow chest", weight: "16.52 ± 0.05 kg" },
+            { name: "Window", weight: "18.493 kg" },
+            { name: "TNT (barrel)", weight: "18.9 kg" },
+            { name: "Concrete / Gold / Glass block", weight: "20.504 kg" },
+            { name: "Boat motor", weight: "21 ± 0.1 kg" },
+            { name: "Switch", weight: "21.338 ± 0.06 kg" },
+            { name: "Obsidian / Stone / Marble / Coal block", weight: "21.528 kg" },
+            { name: "Small / Medium / Large treasure", weight: "23.526 ± 0.1 kg" },
+            { name: "Rusted / Metal / Titanium rod", weight: "23.55 kg" },
+            { name: "Mounted flintknocks", weight: "23.7 ± 0.07 kg" },
+            { name: "Door", weight: "24.588 kg" },
+            { name: "Fabbi_theDuck plushie", weight: "25.647 ± 0.07 kg" },
+            { name: "Mystery block", weight: "26.337 kg" },
+            { name: "Cannon", weight: "27.048 kg" },
+            { name: "Mini gun", weight: "27.058 ± 0.14 kg" },
+            { name: "Helm", weight: "29.098 ± 0.1 kg" },
+            { name: "Bread", weight: "31.937 kg" },
+            { name: "Big switch", weight: "37.956 ± 0.102 kg" },
+            { name: "Long lever", weight: "39.7 ± 0.11 kg" },
+            { name: "Magnet", weight: "39.874 ± 0.11 kg" },
+            { name: "Potions", weight: "43.2 ± 0.12 kg" },
+            { name: "Dynamite", weight: "43.621 kg" },
+            { name: "Pumpkin", weight: "45.463 ± 0.12 kg" },
+            { name: "Flag", weight: "48.023 ± 0.24 kg" },
+            { name: "Thruster / Ultra / Mega", weight: "48.439 kg" },
+            { name: "Shield generator", weight: "48.557 ± 0.13 kg" },
+            { name: "Torch", weight: "48.78 ± 0.13 kg" },
+            { name: "1st / 2nd / 3rd trophy", weight: "48.93 ± 0.13 kg" },
+            { name: "Winter thruster", weight: "50.231 kg" },
+            { name: "Halloween thruster", weight: "51.125 ± 0.135 kg" },
+            { name: "Dragon egg", weight: "60 ± 0.2 kg" },
+            { name: "Rusted / Metal / Titanium / I-beam", weight: "62.8 kg" },
+            { name: "Candle", weight: "67.17 ± 0.18 kg" },
+            { name: "Life preserver", weight: "69.307 kg" },
+            { name: "Old wheel", weight: "75.366 kg" },
+            { name: "Servo", weight: "78.5 kg" },
+            { name: "Boxing glove", weight: "82.836 kg" },
+            { name: "Mast", weight: "102.7 ± 0.6 kg" },
+            { name: "Common / Uncommon / Rare / Epic / Legendary chest", weight: "109.337 ± 0.55 kg" },
+            { name: "Winter boat motor", weight: "121.17 ± 0.35 kg" },
+            { name: "Lamp", weight: "133.32 kg" },
+            { name: "Locked door", weight: "136.79 ± 0.7 kg" },
+            { name: "Throne", weight: "189.52 ± 1 kg" },
+            { name: "Red / Purple / Winter Jet turbine", weight: "204.174 kg" },
+            { name: "Spike trap", weight: "208.85 ± 1.06 kg" },
+            { name: "Mounted cannon", weight: "217.76 ± 0.56 kg" },
+            { name: "Dragon harpoon", weight: "285.55 ± 0.75 kg" },
+            { name: "Dual candy cane harpoon", weight: "304.17 ± 0.77 kg" },
+            { name: "Gold / normal Harpoon", weight: "315.5 ± 0.8 kg" },
+            { name: "Huge old wheels", weight: "850.296 kg" },
+            { name: "Pine tree", weight: "987.6 ± 2.5 kg" },
+            { name: "Portal", weight: "1585.3 ± 4 kg" },
+            { name: "New front / back wheel", weight: "1668.456 ± 4.182 kg" },
+            { name: "Christmas front / back wheel", weight: "1712 ± 5 kg" },
+            { name: "Cookie wheels", weight: "2930 ± 8 kg" },
+            { name: "Monster truck front / back wheel", weight: "3450 ± 9 kg" },
+            { name: "Soccer ball", weight: "6544.985 kg" }
+        ];
+
+        let showingAll = false;
+
+        function displayBlocks(list) {
+            const container = document.getElementById('result-container');
+            container.innerHTML = ''; 
+
+            if (list.length === 0) {
+                container.innerHTML = '<div class="no-match">No blocks found matching that name.</div>';
+                return;
+            }
+
+            list.forEach(block => {
+                const item = document.createElement('div');
+                item.className = 'block-item';
+                item.innerHTML = `
+                    <span class="block-name">${block.name}</span>
+                    <span class="block-weight">${block.weight}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function filterBlocks() {
+            const query = document.getElementById('search-bar').value.toLowerCase().trim();
+
+            if (query === '') {
+                if (showingAll) {
+                    displayBlocks(blockData);
+                } else {
+                    document.getElementById('result-container').innerHTML = '';
+                }
+                return;
+            }
+
+            const matches = blockData.filter(block => block.name.toLowerCase().includes(query));
+            displayBlocks(matches);
+        }
+
+        function toggleAllBlocks() {
+            const button = document.getElementById('toggle-btn');
+            const searchBar = document.getElementById('search-bar');
+
+            if (!showingAll) {
+                showingAll = true;
+                button.innerText = "Clear List";
+                button.style.backgroundColor = "#e74c3c"; // Quotes fixed!
+                searchBar.value = ''; 
+                displayBlocks(blockData);
+            } else {
+                showingAll = false;
+                button.innerText = "Show All Blocks";
+                button.style.backgroundColor = "#4a90e2"; // Quotes fixed!
+                searchBar.value = '';
+                document.getElementById('result-container').innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>
